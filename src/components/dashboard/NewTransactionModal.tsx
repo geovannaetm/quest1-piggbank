@@ -12,16 +12,16 @@ type Props = {
   isOpen: boolean
   onClose: () => void
   onSave: (t: Transaction) => void
+  initialTransaction?: Transaction | null
 }
 
-export function NewTransactionModal({ isOpen, onClose, onSave }: Props) {
+export function NewTransactionModal({ isOpen, onClose, onSave, initialTransaction }: Props) {
   const [type, setType] = React.useState<"income" | "expense">("income")
   const [amount, setAmount] = React.useState<string>("")
   const [date, setDate] = React.useState<Date>(new Date())
   const [category, setCategory] = React.useState<string>("Assinatura")
   const [description, setDescription] = React.useState<string>("")
   const [error, setError] = React.useState<string | null>(null)
-
   React.useEffect(() => {
     if (!isOpen) {
       setAmount("")
@@ -30,8 +30,18 @@ export function NewTransactionModal({ isOpen, onClose, onSave }: Props) {
       setDescription("")
       setType("income")
       setError(null)
+      return
     }
-  }, [isOpen])
+
+    if (initialTransaction) {
+      setType(initialTransaction.type)
+      setAmount(String(initialTransaction.amount))
+      setDate(initialTransaction.date)
+      setCategory(initialTransaction.category)
+      setDescription(initialTransaction.description)
+      setError(null)
+    }
+  }, [isOpen, initialTransaction])
 
   if (!isOpen) return null
 
@@ -49,7 +59,7 @@ export function NewTransactionModal({ isOpen, onClose, onSave }: Props) {
     if (!validate()) return
     const value = Number(amount.replace(/[^0-9.-]+/g, ""))
     const transaction: Transaction = {
-      id: String(Date.now()),
+      id: initialTransaction?.id ?? String(Date.now()),
       description: description || `${category}`,
       amount: Math.round(value),
       type,
@@ -79,7 +89,7 @@ export function NewTransactionModal({ isOpen, onClose, onSave }: Props) {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">Nova Transação</h3>
+              <h3 className="text-lg font-bold text-foreground">{initialTransaction ? "Editar Transação" : "Nova Transação"}</h3>
               <p className="mt-1 text-xs text-muted-foreground">Registre uma entrada ou saída no fluxo de caixa</p>
             </div>
           </div>

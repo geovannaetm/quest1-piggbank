@@ -16,6 +16,7 @@ type Props = {
 export default function DashboardClient({ metrics, initialTransactions }: Props) {
   const [isOpen, setIsOpen] = React.useState(false)
   const [transactions, setTransactions] = React.useState<Transaction[]>(initialTransactions)
+  const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null)
   const [clientMetrics, setClientMetrics] = React.useState<MetricSummary[]>(metrics)
 
   React.useEffect(() => {
@@ -23,8 +24,14 @@ export default function DashboardClient({ metrics, initialTransactions }: Props)
   }, [transactions])
 
   function handleSave(t: Transaction) {
-    // update local state
-    setTransactions((prev) => [t, ...prev])
+    setTransactions((prev) => {
+      const exists = prev.some((p) => p.id === t.id)
+      if (exists) {
+        return prev.map((p) => (p.id === t.id ? t : p))
+      }
+      return [t, ...prev]
+    })
+    setEditingTransaction(null)
   }
 
   return (
@@ -54,11 +61,26 @@ export default function DashboardClient({ metrics, initialTransactions }: Props)
 
         <div>
           <h2 className="mb-4 text-base font-medium text-foreground">Transações recentes</h2>
-          <TransactionsTable transactions={transactions} />
+          <TransactionsTable
+            transactions={transactions}
+            onDelete={(id) => setTransactions((prev) => prev.filter((t) => t.id !== id))}
+            onEdit={(t) => {
+              setEditingTransaction(t)
+              setIsOpen(true)
+            }}
+          />
         </div>
       </main>
 
-      <NewTransactionModal isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={handleSave} />
+      <NewTransactionModal
+        isOpen={isOpen}
+        initialTransaction={editingTransaction}
+        onClose={() => {
+          setIsOpen(false)
+          setEditingTransaction(null)
+        }}
+        onSave={handleSave}
+      />
     </div>
   )
 }
